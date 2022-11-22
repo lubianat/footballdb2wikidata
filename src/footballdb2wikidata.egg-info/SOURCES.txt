@@ -8,4 +8,5 @@ src/footballdb2wikidata.egg-info/dependency_links.txt
 src/footballdb2wikidata.egg-info/not-zip-safe
 src/footballdb2wikidata.egg-info/requires.txt
 src/footballdb2wikidata.egg-info/top_level.txt
+src/footballdb2wikidata/dicts/__init__.py
 test/test_parse_football_format.py
