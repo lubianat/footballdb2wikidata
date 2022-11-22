@@ -1,0 +1,11 @@
+pyproject.toml
+setup.cfg
+src/footballdb2wikidata/__init__.py
+src/footballdb2wikidata/parse_football_format.py
+src/footballdb2wikidata.egg-info/PKG-INFO
+src/footballdb2wikidata.egg-info/SOURCES.txt
+src/footballdb2wikidata.egg-info/dependency_links.txt
+src/footballdb2wikidata.egg-info/not-zip-safe
+src/footballdb2wikidata.egg-info/requires.txt
+src/footballdb2wikidata.egg-info/top_level.txt
+test/test_parse_football_format.py
