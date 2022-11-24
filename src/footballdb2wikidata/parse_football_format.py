@@ -2,6 +2,20 @@ from pathlib import Path
 from dataclasses import dataclass
 from .dicts import dicts
 from datetime import datetime
+from wdcuration import add_key
+from pathlib import Path
+import json
+
+HERE = Path(__file__).parent.resolve()
+DICTS = HERE.parent.joinpath("footballdb2wikidata").joinpath("dicts").resolve()
+
+
+def main():
+    sample_football_text = """(1) Sun Nov/20 19:00      Qatar   0-2 (0-2)   Ecuador    @ Al Bayt Stadium, Al Khor
+              [-; Enner Valencia 16' (pen.), 31']  """
+    result_class = get_class_from_text(sample_football_text)
+    result_class.parse_to_wikidata()
+    result_class_wikidata = result_class.wikidata_version
 
 
 @dataclass
@@ -27,10 +41,19 @@ class WikidataFootballGame:
     winner: str  # Q987584
     stadium: str  # Q1050220 (Al Bayt Stadium)
     goals: list  # [WikidataGoal(Q62521848, 16, Q62521848, Q279532), WikidataGoal(Q2843080, 31,Q62521848 )]
-    event = "Q284163"  # FIFA World Cup
+    event: str = "Q284163"  # FIFA World Cup
     match_type: str = "Q17315159"  # international association football match
     sport: str = "Q2736"  # Association football
-    timezone = "Q6760"  #  (UTC+3)
+    timezone: str = "Q6760"  #  (UTC+3)
+
+
+def check_and_save_dict(dict_name, string, path=DICTS):
+    if string not in dicts[dict_name]:
+        dicts[dict_name] = add_key(dicts["time"], string)
+        path.joinpath(f"{dict_name}.json").write_text(
+            json.dumps(dicts[dict_name], indent=4, sort_keys=True)
+        )
+    return dicts[dict_name]
 
 
 @dataclass
@@ -49,11 +72,15 @@ class FootballGame:
 
     def parse_to_wikidata(self, year="2022"):
         date_python = datetime.strptime(self.date + f"-{year}", "%b/%d-%Y")
+        dicts["time"] = check_and_save_dict("time", self.time, path=DICTS)
+        dicts["team"] = check_and_save_dict("team", self.team_1, path=DICTS)
+        dicts["team"] = check_and_save_dict("team", self.team_2, path=DICTS)
 
         self.wikidata_version = WikidataFootballGame(
-            date=date_python.strftime(
-                "+%Y-%m-%dT00:00:00Z/11",
-            )
+            date=date_python.strftime("+%Y-%m-%dT00:00:00Z/11"),
+            time=dicts["time"][self.time],
+            team_1=dicts["team"][self.team_1],
+            team_2=dicts["team"][self.team_2],
         )
 
 
@@ -75,3 +102,7 @@ def get_class_from_text(text):
             )
             print(game)
     return game
+
+
+if __name__ == "__main__":
+    main()
