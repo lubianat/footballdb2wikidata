@@ -38,13 +38,19 @@ class WikidataFootballGame:
     team_1_goals: int  # 0
     team_2: str  # Q987584 (Ecuador national association football team)
     team_2_goals: int  # 2
-    winner: str  # Q987584
     stadium: str  # Q1050220 (Al Bayt Stadium)
     goals: list  # [WikidataGoal(Q62521848, 16, Q62521848, Q279532), WikidataGoal(Q2843080, 31,Q62521848 )]
     event: str = "Q284163"  # FIFA World Cup
     match_type: str = "Q17315159"  # international association football match
     sport: str = "Q2736"  # Association football
     timezone: str = "Q6760"  #  (UTC+3)
+    winner: str = ""  # Q987584
+
+    def __post_init__(self):
+        if self.team_1_goals > self.team_2_goals:
+            self.winner = self.team_1
+        elif self.team_1_goals < self.team_2_goals:
+            self.winner = self.team_2
 
 
 def check_and_save_dict(dict_name, string, path=DICTS):
@@ -75,12 +81,16 @@ class FootballGame:
         dicts["time"] = check_and_save_dict("time", self.time, path=DICTS)
         dicts["team"] = check_and_save_dict("team", self.team_1, path=DICTS)
         dicts["team"] = check_and_save_dict("team", self.team_2, path=DICTS)
+        dicts["stadium"] = check_and_save_dict("stadium", self.stadium, path=DICTS)
 
         self.wikidata_version = WikidataFootballGame(
             date=date_python.strftime("+%Y-%m-%dT00:00:00Z/11"),
             time=dicts["time"][self.time],
             team_1=dicts["team"][self.team_1],
             team_2=dicts["team"][self.team_2],
+            team_1_goals=int(self.score.split("-")[0]),
+            team_2_goals=int(self.score.split("-")[1]),
+            stadium=dicts["stadium"][self.stadium],
         )
 
 
