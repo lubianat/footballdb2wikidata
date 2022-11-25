@@ -1,6 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass
-from .dicts import dicts
+from dicts import dicts
 from datetime import datetime
 from wdcuration import add_key
 from pathlib import Path
@@ -11,7 +11,7 @@ DICTS = HERE.parent.joinpath("footballdb2wikidata").joinpath("dicts").resolve()
 
 
 def main():
-    sample_football_text = """(1) Sun Nov/20 19:00      Qatar   0-2 (0-2)   Ecuador    @ Al Bayt Stadium, Al Khor
+    sample_football_text = """(1) Sun Nov/20 19:00      Brazil 0-2 (0-2)   Ecuador    @ Al Bayt Stadium, Al Khor
               [-; Enner Valencia 16' (pen.), 31']  """
     result_class = get_class_from_text(sample_football_text)
     result_class.parse_to_wikidata()
@@ -53,9 +53,13 @@ class WikidataFootballGame:
             self.winner = self.team_2
 
 
-def check_and_save_dict(dict_name, string, path=DICTS):
+def format_country_for_national_team(string):
+    return string + " national football team"
+
+
+def check_and_save_dict(dict_name, string, format_function=str, path=DICTS):
     if string not in dicts[dict_name]:
-        dicts[dict_name] = add_key(dicts["time"], string)
+        dicts[dict_name] = add_key(dicts[dict_name], string, search_string=format_function(string))
         path.joinpath(f"{dict_name}.json").write_text(
             json.dumps(dicts[dict_name], indent=4, sort_keys=True)
         )
@@ -79,9 +83,15 @@ class FootballGame:
     def parse_to_wikidata(self, year="2022"):
         date_python = datetime.strptime(self.date + f"-{year}", "%b/%d-%Y")
         dicts["time"] = check_and_save_dict("time", self.time, path=DICTS)
-        dicts["team"] = check_and_save_dict("team", self.team_1, path=DICTS)
-        dicts["team"] = check_and_save_dict("team", self.team_2, path=DICTS)
+        dicts["team"] = check_and_save_dict(
+            "team", self.team_1, path=DICTS, format_function=format_country_for_national_team
+        )
+        dicts["team"] = check_and_save_dict(
+            "team", self.team_2, path=DICTS, format_function=format_country_for_national_team
+        )
         dicts["stadium"] = check_and_save_dict("stadium", self.stadium, path=DICTS)
+
+        goal_list = self.goals.split(",")
 
         self.wikidata_version = WikidataFootballGame(
             date=date_python.strftime("+%Y-%m-%dT00:00:00Z/11"),
