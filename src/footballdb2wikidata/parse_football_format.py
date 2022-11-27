@@ -1,10 +1,12 @@
 from pathlib import Path
 from dataclasses import dataclass
-from dicts import dicts
+from .dicts import dicts
 from datetime import datetime
 from wdcuration import add_key
 from pathlib import Path
 import json
+import re
+
 
 HERE = Path(__file__).parent.resolve()
 DICTS = HERE.parent.joinpath("footballdb2wikidata").joinpath("dicts").resolve()
@@ -91,8 +93,27 @@ class FootballGame:
         )
         dicts["stadium"] = check_and_save_dict("stadium", self.stadium, path=DICTS)
 
-        goal_list = self.goals.split(",")
+        goal_list = self.goals.replace("[", "").replace("]", "").split(";")
+        scorer_list = [a for a in goal_list if a != "-"]
 
+        for scorer in scorer_list:
+            scorer_name = scorer.split()[0] + " " + scorer.split()[1]
+
+            scorer_qid = dicts["player"][scorer_name]
+
+            goals = scorer.split(",")
+            for goal in goals:
+                m = re.findall("([0-9][0-9])'", goal)
+                print(m)
+                score_method_string = re.findall("\((.*)\)", goal)
+
+                print(score_method_string)
+                method_qid = dicts["method"][score_method_string]
+                wikidata_goal = WikidataGoal(
+                    time=int(m[0]), scorer=scorer_qid, score_method=method_qid
+                )
+
+        print(goal_list)
         self.wikidata_version = WikidataFootballGame(
             date=date_python.strftime("+%Y-%m-%dT00:00:00Z/11"),
             time=dicts["time"][self.time],
